@@ -1,8 +1,60 @@
+@import url("https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;700&display=swap");
+
 body {
-  color: red;
+  margin: 0;
+  padding: 34px 56px 48px;
+  background: #e5e5e7;
+  color: #9d0808;
+  font-family: "Courier New", "Fira Mono", monospace;
 }
 
 h1 {
-  color: red;
-  font-family: monospace;
+  margin: 0 0 26px;
+  color: #111;
+  font-size: 56px;
+}
+
+h2 {
+  margin: 24px 0 0;
+  font-size: 44px;
+}
+
+h3 {
+  margin: 0;
+  font-size: 38px;
+}
+
+p,
+li {
+  margin: 0;
+  font-size: 38px;
+  line-height: 1.2;
+}
+
+ul {
+  margin: 4px;
+  padding-left: 48px;
+}
+
+h2,
+p,
+h3,
+ul {
+  width: min(100%, 1150px);
+  background: #ececee;
+  border: 2px solid #4b4b4b;
+  padding: 22px 36px;
+}
+
+p,
+h3,
+ul {
+  margin-top: 0;
+}
+
+h2:hover,
+p:hover,
+h3:hover,
+ul:hover {
+  background: #f4dede;
 }
