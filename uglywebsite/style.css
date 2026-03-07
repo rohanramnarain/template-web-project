@@ -49,7 +49,7 @@ p,
 li,
 td,
 a,
-marquee {
+.alert-line {
   font-size: 32px;
 }
 
@@ -154,7 +154,7 @@ td:last-child {
   text-align: left;
 }
 
-marquee {
+.alert-line {
   color: #ff4d4d;
   font-weight: 700;
   text-shadow: 1px 1px 0 #ffee00;
