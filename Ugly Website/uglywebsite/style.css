@@ -1,0 +1,85 @@
+@import url("https://fonts.googleapis.com/css2?family=VT323&display=swap");
+
+body {
+  margin: 0;
+  padding: 18px;
+  background: #000 url("../../assets/img/tile.jpg") repeat;
+  color: #33ffcc;
+  font-family: "VT323", "Courier New", monospace;
+  letter-spacing: 0.4px;
+}
+
+h1,
+h2,
+h3 {
+  color: #ff44aa;
+  text-shadow: 1px 1px 0 #00aaff;
+  margin: 14px 0;
+}
+
+h1 {
+  font-size: 64px;
+}
+
+h2 {
+  font-size: 48px;
+}
+
+h3 {
+  font-size: 42px;
+}
+
+p,
+li,
+td,
+a,
+marquee {
+  font-size: 32px;
+}
+
+a {
+  color: #ffd16a;
+}
+
+a:hover {
+  background: #1d0036;
+  color: #ffffff;
+}
+
+.hero-card,
+.links-table,
+.gallery-table {
+  background: #111;
+  border: 2px solid #33ffcc;
+}
+
+.hero-card:hover,
+.links-table:hover,
+.gallery-table:hover {
+  background: #1a0030;
+}
+
+.subtitle {
+  color: #66ffff;
+  margin: 8px 0 16px;
+}
+
+.warning {
+  color: #ffcc66;
+}
+
+ul {
+  width: 90%;
+  margin: 0 auto 18px;
+  padding-left: 50px;
+  text-align: left;
+}
+
+.footer-nav {
+  margin: 24px 0 10px;
+}
+
+img {
+  border: 2px dashed #ff44aa;
+  background: #030303;
+}
