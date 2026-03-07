@@ -10,7 +10,7 @@ body {
   font-style: normal;
   letter-spacing: 0.4px;
   word-spacing: 2px;
-  text-align: center;
+  text-align: left;
 }
 
 h1,
@@ -27,16 +27,22 @@ h1 {
   text-decoration: underline overline;
   text-decoration-style: wavy;
   text-decoration-color: #ffea00;
+  margin-left: 7%;
+  transform: rotate(-1.4deg);
 }
 
 h2 {
   font-size: 48px;
   font-style: italic;
+  text-align: left;
+  margin-left: 3%;
 }
 
 h3 {
   font-size: 42px;
   text-transform: capitalize;
+  margin-left: 9%;
+  transform: rotate(0.7deg);
 }
 
 p,
@@ -66,6 +72,7 @@ a:hover {
   border: 2px solid #33ffcc;
   border-radius: 10px;
   box-shadow: 0 0 12px #00d9ff;
+  margin-left: 2%;
 }
 
 .hero-card:hover,
@@ -76,12 +83,31 @@ a:hover {
   box-shadow: 0 0 16px #ff44aa;
 }
 
+.hero-card {
+  width: 89%;
+  transform: rotate(-0.5deg);
+}
+
+.links-table {
+  width: 94%;
+  margin-left: 0;
+  transform: rotate(0.4deg);
+}
+
+.gallery-table {
+  width: 87%;
+  margin-left: 5%;
+  transform: rotate(-0.9deg);
+}
+
 .subtitle {
   color: #66ffff;
   margin: 8px 0 16px;
   text-transform: uppercase;
   letter-spacing: 1.4px;
   word-spacing: 4px;
+  margin-left: 12%;
+  text-align: left;
 }
 
 .warning {
@@ -89,16 +115,27 @@ a:hover {
 }
 
 ul {
-  width: 90%;
-  margin: 0 auto 18px;
+  width: 84%;
+  margin: 0 0 22px 10%;
   padding-left: 50px;
   text-align: left;
   list-style-type: square;
 }
 
+ul:nth-of-type(odd) {
+  margin-left: 7%;
+  transform: rotate(0.3deg);
+}
+
+ul:nth-of-type(even) {
+  margin-left: 12%;
+  transform: rotate(-0.4deg);
+}
+
 .footer-nav {
-  margin: 24px 0 10px;
+  margin: 37px 0 8px 4%;
   text-decoration: overline;
+  text-align: left;
 }
 
 img {
@@ -106,6 +143,15 @@ img {
   background: #030303;
   object-fit: cover;
   filter: saturate(1.2) contrast(1.05);
+  transform: rotate(-1deg);
+}
+
+td:first-child {
+  text-align: right;
+}
+
+td:last-child {
+  text-align: left;
 }
 
 marquee {
