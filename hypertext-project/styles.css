@@ -1,0 +1,104 @@
+body {
+	margin: 0;
+	font-family: Arial, sans-serif;
+	line-height: 1.67;
+
+	background-color: honeydew;
+	color: darkgreen;
+}
+
+
+.top-layer {
+	background-color: gold;
+	display: flex;
+    
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+	padding: 8px 12px;
+	border-bottom: 2px solid firebrick;
+	text-align: center;
+}
+
+.top-layer a {
+	color: forestgreen;
+
+	text-decoration: none;
+	font-weight: bold;
+}
+
+.top-layer a:hover {
+	text-decoration: underline;
+}
+
+header {
+	background-color: seagreen;
+
+	color: white;
+	padding: 20px;
+	text-align: center;
+}
+
+h1 {
+	margin: 0;
+}
+
+main {
+	max-width: 800px;
+
+	margin: 24px auto;
+	padding: 0 13px;
+}
+
+.card {
+	background-color: white;
+
+
+	border-radius: 8px;
+	padding: 20px;
+}
+
+.photo-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 13px;
+	margin: 16px 0;
+}
+
+.photo-grid figure {
+	margin: 0;
+	flex: 1 1 48%;
+}
+
+.photo-grid img {
+	width: 100%;
+	display: block;
+	border-radius: 6px;
+	border: 2px solid gold;
+}
+
+.photo-grid figcaption {
+	font-size: 0.91rem;
+	margin-top: 6px;
+	color: seagreen;
+}
+
+a {
+	color: firebrick;
+}
+
+footer {
+	padding: 24px;
+	color: seagreen;
+	text-align: center;
+}
+
+@media (max-width: 723px) {
+	.photo-grid {
+		flex-direction: column;
+	}
+
+	.photo-grid figure {
+		flex-basis: 100%;
+	}
+}
