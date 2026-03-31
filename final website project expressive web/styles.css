@@ -3,11 +3,11 @@
   --paper-shadow: #eadfc5;
   --ink: #1f1f1b;
   --soft-ink: #464437;
-  --accent: #b6452f;
-  --accent-strong: #933122;
+  --accent: #2f78da;
+  --accent-strong: #1d4fa1;
   --track-fill: #f3e8c8;
   --radius: 20px;
-  --track-width: 34;
+  --track-width: 46;
   --world-width: 3400px;
 }
 
@@ -109,7 +109,7 @@ h1 {
 .track-outline {
   fill: none;
   stroke: var(--ink);
-  stroke-width: 41;
+  stroke-width: calc(var(--track-width) + 10);
   stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
@@ -153,7 +153,7 @@ h1 {
 .ball {
   fill: var(--accent);
   stroke: var(--accent-strong);
-  stroke-width: 2;
+  stroke-width: 3;
   filter: drop-shadow(1px 2px 0 rgba(0, 0, 0, 0.25));
   touch-action: none;
 }

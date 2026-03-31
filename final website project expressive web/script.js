@@ -8,6 +8,9 @@ let activeStemGroup = null;
 let isBallDragging = false;
 let dragProgress = 0;
 let dragChoice = null;
+let choiceHistory = [];
+let dragStartClientX = null;
+let dragLatestClientX = null;
 
 const progressText = document.getElementById("progress");
 const promptText = document.getElementById("prompt");
@@ -204,17 +207,25 @@ function panToPoint(point) {
   world.style.transform = `translateX(${-clamped}px)`;
 }
 
-function animateBallAlongPath(pathElement) {
+function setWorldTransitionEnabled(enabled) {
+  world.style.transition = enabled ? "" : "none";
+}
+
+function animateBallAlongPath(pathElement, options = {}) {
+  const { reverse = false, duration = 920 } = options;
+
   return new Promise((resolve) => {
     if (reducedMotionEnabled()) {
-      const end = pathElement.getPointAtLength(pathElement.getTotalLength());
-      setBallPosition(end);
+      const total = pathElement.getTotalLength();
+      const edgePoint = pathElement.getPointAtLength(reverse ? 0 : total);
+      setBallPosition(edgePoint);
       resolve();
       return;
     }
 
+    setWorldTransitionEnabled(false);
+
     const pathLength = pathElement.getTotalLength();
-    const duration = 920;
     const start = performance.now();
 
     const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
@@ -222,13 +233,15 @@ function animateBallAlongPath(pathElement) {
     function frame(now) {
       const raw = Math.min((now - start) / duration, 1);
       const eased = easeInOut(raw);
-      const point = pathElement.getPointAtLength(pathLength * eased);
+      const travelProgress = reverse ? 1 - eased : eased;
+      const point = pathElement.getPointAtLength(pathLength * travelProgress);
       setBallPosition(point);
       panToPoint(point);
 
       if (raw < 1) {
         requestAnimationFrame(frame);
       } else {
+        setWorldTransitionEnabled(true);
         resolve();
       }
     }
@@ -241,15 +254,21 @@ function moveSelectedPathToRevealed(choice) {
   const selected = activeChoices[choice];
   const unselectedChoice = choice === "A" ? "B" : "A";
   const unselected = activeChoices[unselectedChoice];
+  const stemToKeep = activeStemGroup;
 
-  if (activeStemGroup) {
-    revealedGroup.append(activeStemGroup);
+  if (stemToKeep) {
+    revealedGroup.append(stemToKeep);
   }
 
   selected.group.classList.add("selected-option");
   unselected.group.classList.add("hidden-option");
   unselected.group.remove();
   revealedGroup.append(selected.group);
+
+  return {
+    stemGroup: stemToKeep,
+    selectedGroup: selected.group
+  };
 }
 
 function showResult() {
@@ -307,9 +326,18 @@ async function commitChoice(choice, skipAnimation = false) {
     panToPoint(selected.end);
   }
 
-  moveSelectedPathToRevealed(choice);
+  const startPoint = { ...currentPosition };
+  const keptGroups = moveSelectedPathToRevealed(choice);
   choices.push(choice);
   currentPosition = selected.end;
+  choiceHistory.push({
+    choice,
+    start: startPoint,
+    end: { ...selected.end },
+    travelPath: selected.travelPath,
+    stemGroup: keptGroups.stemGroup,
+    selectedGroup: keptGroups.selectedGroup
+  });
   currentStep += 1;
 
   clearActiveChoices();
@@ -322,6 +350,43 @@ async function commitChoice(choice, skipAnimation = false) {
   }
 
   updateProgress();
+  interactionLocked = false;
+}
+
+async function undoLastChoice() {
+  if (interactionLocked || currentStep === 0 || choiceHistory.length === 0) {
+    return;
+  }
+
+  interactionLocked = true;
+  setButtonsDisabled(true);
+
+  const last = choiceHistory[choiceHistory.length - 1];
+  if (last.travelPath) {
+    await animateBallAlongPath(last.travelPath, { reverse: true, duration: 760 });
+  }
+
+  clearActiveChoices();
+  choiceHistory.pop();
+
+  if (last.selectedGroup && last.selectedGroup.parentNode) {
+    last.selectedGroup.remove();
+  }
+
+  if (last.stemGroup && last.stemGroup.parentNode) {
+    last.stemGroup.remove();
+  }
+
+  choices.pop();
+  currentStep -= 1;
+  currentPosition = { ...last.start };
+
+  setBallPosition(currentPosition);
+  panToPoint(currentPosition);
+  buildStepChoices(currentStep);
+  updateProgress();
+
+  setButtonsDisabled(false);
   interactionLocked = false;
 }
 
@@ -349,6 +414,7 @@ function updateDragPosition(clientX, clientY) {
   dragProgress = progress;
 
   const selectedPoint = dragChoice === "A" ? pointA : pointB;
+  setWorldTransitionEnabled(false);
   setBallPosition(selectedPoint);
   panToPoint(selectedPoint);
 }
@@ -362,6 +428,8 @@ function setupBallDragHandlers() {
     isBallDragging = true;
     dragProgress = 0;
     dragChoice = null;
+    dragStartClientX = event.clientX;
+    dragLatestClientX = event.clientX;
     ball.setPointerCapture(event.pointerId);
     updateDragPosition(event.clientX, event.clientY);
     event.preventDefault();
@@ -372,6 +440,7 @@ function setupBallDragHandlers() {
       return;
     }
 
+    dragLatestClientX = event.clientX;
     updateDragPosition(event.clientX, event.clientY);
   });
 
@@ -381,15 +450,29 @@ function setupBallDragHandlers() {
     }
 
     const canCommit = dragChoice && dragProgress > 0.95;
+    const draggedLeft =
+      dragStartClientX !== null &&
+      dragLatestClientX !== null &&
+      dragStartClientX - dragLatestClientX > 70;
+    const shouldUndo = !canCommit && dragProgress < 0.2 && draggedLeft && currentStep > 0;
+
     isBallDragging = false;
+    dragStartClientX = null;
+    dragLatestClientX = null;
 
     if (canCommit) {
       commitChoice(dragChoice, true);
       return;
     }
 
+    if (shouldUndo) {
+      undoLastChoice();
+      return;
+    }
+
     dragProgress = 0;
     dragChoice = null;
+    setWorldTransitionEnabled(true);
     setBallPosition(currentPosition);
     panToPoint(currentPosition);
   };
@@ -495,6 +578,9 @@ function restartQuiz() {
   isBallDragging = false;
   dragProgress = 0;
   dragChoice = null;
+  choiceHistory = [];
+  dragStartClientX = null;
+  dragLatestClientX = null;
   currentPosition = { x: 120, y: 260 };
 
   clearActiveChoices();
@@ -524,6 +610,7 @@ function init() {
 
   buildStepChoices(0);
   setBallPosition(currentPosition);
+  setWorldTransitionEnabled(true);
   panToPoint(currentPosition);
   updateProgress();
 }
