@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expressive Web Branching Quiz</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app" aria-label="Interactive house journey">
+    <header class="top-bar">
+      <p class="progress" id="progress">Step 1 of 3</p>
+      <h1>House of Paths</h1>
+      <p class="prompt" id="prompt">You are at the front door.</p>
+    </header>
+
+    <section class="journey-area" aria-label="Branching path area">
+      <div class="journey-viewport" id="journey-viewport">
+        <div class="journey-world" id="journey-world">
+          <svg id="journey-svg" class="journey-svg" viewBox="0 0 3400 520" role="img" aria-labelledby="journey-title journey-desc" preserveAspectRatio="xMidYMid meet">
+            <title id="journey-title">Continuous branching path</title>
+            <desc id="journey-desc">A single path journey that extends to the right after every decision.</desc>
+
+            <g id="revealed-group"></g>
+            <g id="active-group"></g>
+
+            <circle id="start-dot" class="start-dot" cx="120" cy="260" r="8"></circle>
+            <circle id="ball" class="ball" cx="120" cy="260" r="14" aria-label="Path marker"></circle>
+          </svg>
+        </div>
+      </div>
+
+      <div class="controls" role="group" aria-label="Room choice controls">
+        <button type="button" id="choice-a" class="choice-btn" aria-label="Choose room A">Room A</button>
+        <button type="button" id="choice-b" class="choice-btn" aria-label="Choose room B">Room B</button>
+      </div>
+
+      <article id="result-panel" class="result-panel" aria-live="polite" hidden>
+        <p class="sequence" id="result-sequence">Sequence: ---</p>
+        <h2 id="result-title">Outcome</h2>
+        <p id="result-description"></p>
+        <button type="button" id="restart-btn" class="restart-btn">Restart Quiz</button>
+      </article>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
