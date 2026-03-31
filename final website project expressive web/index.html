@@ -9,7 +9,7 @@
 <body>
   <main class="app" aria-label="Interactive house journey">
     <header class="top-bar">
-      <p class="progress" id="progress">Step 1 of 3</p>
+      <p class="progress" id="progress">Step 1 of 4</p>
       <h1>House of Paths</h1>
       <p class="prompt" id="prompt">You are at the front door.</p>
     </header>
@@ -17,9 +17,9 @@
     <section class="journey-area" aria-label="Branching path area">
       <div class="journey-viewport" id="journey-viewport">
         <div class="journey-world" id="journey-world">
-          <svg id="journey-svg" class="journey-svg" viewBox="0 0 3400 520" role="img" aria-labelledby="journey-title journey-desc" preserveAspectRatio="xMidYMid meet">
+          <svg id="journey-svg" class="journey-svg" viewBox="0 0 4600 520" role="img" aria-labelledby="journey-title journey-desc" preserveAspectRatio="xMidYMid meet">
             <title id="journey-title">Continuous branching path</title>
-            <desc id="journey-desc">A single path journey that extends to the right after every decision.</desc>
+            <desc id="journey-desc">A single path journey that extends to the right after every three-way fork decision.</desc>
 
             <g id="revealed-group"></g>
             <g id="active-group"></g>
@@ -33,6 +33,7 @@
       <div class="controls" role="group" aria-label="Room choice controls">
         <button type="button" id="choice-a" class="choice-btn" aria-label="Choose room A">Room A</button>
         <button type="button" id="choice-b" class="choice-btn" aria-label="Choose room B">Room B</button>
+        <button type="button" id="choice-c" class="choice-btn" aria-label="Choose room C">Room C</button>
       </div>
 
       <article id="result-panel" class="result-panel" aria-live="polite" hidden>

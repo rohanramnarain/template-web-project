@@ -1,4 +1,3 @@
-const totalDecisionSteps = 3;
 let currentStep = 0;
 let choices = [];
 let interactionLocked = false;
@@ -23,6 +22,7 @@ const ball = document.getElementById("ball");
 const startDot = document.getElementById("start-dot");
 const buttonA = document.getElementById("choice-a");
 const buttonB = document.getElementById("choice-b");
+const buttonC = document.getElementById("choice-c");
 const restartButton = document.getElementById("restart-btn");
 const resultPanel = document.getElementById("result-panel");
 const resultSequence = document.getElementById("result-sequence");
@@ -30,55 +30,38 @@ const resultTitle = document.getElementById("result-title");
 const resultDescription = document.getElementById("result-description");
 
 const SVG_NS = "http://www.w3.org/2000/svg";
-const WORLD_WIDTH = 3400;
-const WORLD_HEIGHT = 520;
+const WORLD_WIDTH = 4600;
 
 const stepConfigs = [
-  { dx: 900, offsets: { A: -120, B: 110 } },
-  { dx: 900, offsets: { A: -150, B: 140 } },
-  { dx: 900, offsets: { A: -90, B: 95 } }
+  { dx: 1050, offsets: { A: -165, B: -20, C: 140 } },
+  { dx: 980, offsets: { A: -145, B: 10, C: 165 } },
+  { dx: 960, offsets: { A: -130, B: 0, C: 155 } },
+  { dx: 930, offsets: { A: -115, B: 18, C: 145 } }
 ];
+
+const totalDecisionSteps = stepConfigs.length;
 
 const roomChoiceLabels = [
-  { A: "Sun Hall", B: "Fireplace Nook" },
-  { A: "Studio Landing", B: "Library Turn" },
-  { A: "Glass Atrium", B: "Garden Passage" }
+  { A: "Sun Hall", B: "Gallery Threshold", C: "Fireplace Nook" },
+  { A: "Studio Landing", B: "Mirror Landing", C: "Library Turn" },
+  { A: "Glass Atrium", B: "Cedar Corridor", C: "Garden Passage" },
+  { A: "Tower Stair", B: "Music Alcove", C: "Courtyard Bridge" }
 ];
 
-const outcomes = {
-  AAA: {
-    title: "Sky Map Room",
-    description: "You arrive at your space. This room belongs to a Sunrise Cartographer: you choose high routes and clear views, mapping possibilities before anyone else sees them."
-  },
-  AAB: {
-    title: "Pivot Lounge",
-    description: "You arrive at your space. This room reflects a Gentle Disruptor: you lead with vision, then pivot with instinct. Your decisions are thoughtful but never rigid."
-  },
-  ABA: {
-    title: "Workshop Gallery",
-    description: "You arrive at your space. This room suits a Curious Builder: you test ideas in the wild and keep what works. Your path grows stronger with each bend."
-  },
-  ABB: {
-    title: "Story Parlor",
-    description: "You arrive at your space. This room is for a Story Weaver: you gather surprising detours into a coherent narrative, and people follow because your path feels human."
-  },
-  BAA: {
-    title: "Strategy Study",
-    description: "You arrive at your space. This room matches a Quiet Strategist: you move calmly through complexity and make sharp choices at the right moments."
-  },
-  BAB: {
-    title: "Pattern Observatory",
-    description: "You arrive at your space. This room fits a Pattern Hunter: you notice hidden links between distant ideas, then turn them into practical direction."
-  },
-  BBA: {
-    title: "Explorer Courtyard",
-    description: "You arrive at your space. This room belongs to a Grounded Explorer: you are open to risk but anchored by purpose, balancing courage and care."
-  },
-  BBB: {
-    title: "Momentum Loft",
-    description: "You arrive at your space. This room reflects a Bold Pathfinder: you commit fully and keep moving, turning uncertain terrain into momentum."
-  }
-};
+const finalSpaces = [
+  { title: "Sky Map Room", vibe: "clear-sighted and future focused" },
+  { title: "Pivot Lounge", vibe: "adaptive and intuitive" },
+  { title: "Workshop Gallery", vibe: "experimental and hands-on" },
+  { title: "Story Parlor", vibe: "narrative rich and human" },
+  { title: "Strategy Study", vibe: "calm and deliberate" },
+  { title: "Pattern Observatory", vibe: "analytical and connective" },
+  { title: "Explorer Courtyard", vibe: "curious and grounded" },
+  { title: "Momentum Loft", vibe: "bold and kinetic" },
+  { title: "Lantern Conservatory", vibe: "gentle and reflective" },
+  { title: "Blueprint Den", vibe: "structured and inventive" },
+  { title: "Tide Listening Room", vibe: "attentive and steady" },
+  { title: "Northern Window Suite", vibe: "open-minded and bright" }
+];
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -88,29 +71,14 @@ function reducedMotionEnabled() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-function updateProgress() {
-  if (currentStep < totalDecisionSteps) {
-    progressText.textContent = `Step ${currentStep + 1} of ${totalDecisionSteps}`;
-    if (currentStep === 0) {
-      promptText.textContent = "You are at the front door.";
-    } else {
-      promptText.textContent = "Choose which room to enter next.";
-    }
-
-    const stepLabels = roomChoiceLabels[currentStep];
-    buttonA.textContent = `Room A: ${stepLabels.A}`;
-    buttonB.textContent = `Room B: ${stepLabels.B}`;
-  } else {
-    progressText.textContent = "Complete";
-    promptText.textContent = "You arrive at your space.";
-    buttonA.textContent = "Room A";
-    buttonB.textContent = "Room B";
-  }
+function setWorldTransitionEnabled(enabled) {
+  world.style.transition = enabled ? "" : "none";
 }
 
 function setButtonsDisabled(disabled) {
   buttonA.disabled = disabled;
   buttonB.disabled = disabled;
+  buttonC.disabled = disabled;
 }
 
 function clearActiveChoices() {
@@ -135,57 +103,6 @@ function createSvgText(label, x, y) {
   return text;
 }
 
-function buildStepChoices(stepIndex) {
-  const config = stepConfigs[stepIndex];
-  const x0 = currentPosition.x;
-  const y0 = currentPosition.y;
-  const splitX = x0 + config.dx * 0.38;
-  const splitY = y0 + (stepIndex % 2 === 0 ? -8 : 8);
-  const x1 = x0 + config.dx;
-
-  const options = {};
-
-  const stemD = `M ${x0} ${y0} C ${x0 + config.dx * 0.12} ${y0}, ${x0 + config.dx * 0.24} ${splitY}, ${splitX} ${splitY}`;
-  const stemGroup = document.createElementNS(SVG_NS, "g");
-  stemGroup.setAttribute("class", "fork-stem");
-  stemGroup.append(
-    createSvgPath("track-outline", stemD),
-    createSvgPath("track-fill", stemD)
-  );
-  activeGroup.append(stemGroup);
-  activeStemGroup = stemGroup;
-
-  ["A", "B"].forEach((choiceKey) => {
-    const endY = clamp(y0 + config.offsets[choiceKey], 85, 430);
-    const branchC1x = splitX + config.dx * 0.16;
-    const branchC2x = splitX + config.dx * 0.48;
-    const branchC1y = splitY + config.offsets[choiceKey] * 0.25;
-    const branchC2y = splitY + config.offsets[choiceKey] * 0.95;
-    const branchD = `M ${splitX} ${splitY} C ${branchC1x} ${branchC1y}, ${branchC2x} ${branchC2y}, ${x1} ${endY}`;
-    const travelD = `${stemD} C ${branchC1x} ${branchC1y}, ${branchC2x} ${branchC2y}, ${x1} ${endY}`;
-
-    const optionGroup = document.createElementNS(SVG_NS, "g");
-    optionGroup.setAttribute("data-choice", choiceKey);
-
-    const outline = createSvgPath("track-outline", branchD);
-    const fill = createSvgPath("track-fill", branchD);
-    const travel = createSvgPath("travel-path", travelD);
-    const roomLabel = roomChoiceLabels[stepIndex][choiceKey];
-    const label = createSvgText(roomLabel, x1 - 190, endY + (choiceKey === "A" ? -16 : 28));
-
-    optionGroup.append(outline, fill, label, travel);
-    activeGroup.append(optionGroup);
-
-    options[choiceKey] = {
-      end: { x: x1, y: endY },
-      group: optionGroup,
-      travelPath: travel
-    };
-  });
-
-  activeChoices = options;
-}
-
 function setBallPosition(point) {
   ball.setAttribute("cx", point.x.toFixed(2));
   ball.setAttribute("cy", point.y.toFixed(2));
@@ -201,14 +118,78 @@ function clientToSvgPoint(clientX, clientY) {
 function panToPoint(point) {
   const viewportWidth = viewport.clientWidth;
   const targetX = point.x - viewportWidth * 0.33;
-  const minX = 0;
   const maxX = WORLD_WIDTH - viewportWidth;
-  const clamped = clamp(targetX, minX, maxX);
+  const clamped = clamp(targetX, 0, maxX);
   world.style.transform = `translateX(${-clamped}px)`;
 }
 
-function setWorldTransitionEnabled(enabled) {
-  world.style.transition = enabled ? "" : "none";
+function updateProgress() {
+  if (currentStep < totalDecisionSteps) {
+    progressText.textContent = `Step ${currentStep + 1} of ${totalDecisionSteps}`;
+    promptText.textContent = currentStep === 0
+      ? "You are at the front door."
+      : "Choose which room to enter next.";
+
+    const labels = roomChoiceLabels[currentStep];
+    buttonA.textContent = `Room A: ${labels.A}`;
+    buttonB.textContent = `Room B: ${labels.B}`;
+    buttonC.textContent = `Room C: ${labels.C}`;
+  } else {
+    progressText.textContent = "Complete";
+    promptText.textContent = "You arrive at your space.";
+    buttonA.textContent = "Room A";
+    buttonB.textContent = "Room B";
+    buttonC.textContent = "Room C";
+  }
+}
+
+function buildStepChoices(stepIndex) {
+  const config = stepConfigs[stepIndex];
+  const x0 = currentPosition.x;
+  const y0 = currentPosition.y;
+  const splitX = x0 + config.dx * 0.34;
+  const splitY = y0 + (stepIndex % 2 === 0 ? -8 : 8);
+  const x1 = x0 + config.dx;
+
+  const stemD = `M ${x0} ${y0} C ${x0 + config.dx * 0.12} ${y0}, ${x0 + config.dx * 0.22} ${splitY}, ${splitX} ${splitY}`;
+  const stemGroup = document.createElementNS(SVG_NS, "g");
+  stemGroup.setAttribute("class", "fork-stem");
+  stemGroup.append(createSvgPath("track-outline", stemD), createSvgPath("track-fill", stemD));
+  activeGroup.append(stemGroup);
+  activeStemGroup = stemGroup;
+
+  const options = {};
+  Object.keys(config.offsets).forEach((choiceKey) => {
+    const offset = config.offsets[choiceKey];
+    const endY = clamp(y0 + offset, 70, 440);
+    const c1x = splitX + config.dx * 0.16;
+    const c2x = splitX + config.dx * 0.52;
+    const c1y = splitY + offset * 0.26;
+    const c2y = splitY + offset * 0.93;
+    const branchD = `M ${splitX} ${splitY} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x1} ${endY}`;
+    const travelD = `${stemD} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x1} ${endY}`;
+
+    const optionGroup = document.createElementNS(SVG_NS, "g");
+    optionGroup.setAttribute("data-choice", choiceKey);
+
+    const outline = createSvgPath("track-outline", branchD);
+    const fill = createSvgPath("track-fill", branchD);
+    const travel = createSvgPath("travel-path", travelD);
+    const roomLabel = roomChoiceLabels[stepIndex][choiceKey];
+    const labelYBias = choiceKey === "A" ? -18 : choiceKey === "B" ? -4 : 26;
+    const label = createSvgText(roomLabel, x1 - 220, endY + labelYBias);
+
+    optionGroup.append(outline, fill, label, travel);
+    activeGroup.append(optionGroup);
+
+    options[choiceKey] = {
+      end: { x: x1, y: endY },
+      group: optionGroup,
+      travelPath: travel
+    };
+  });
+
+  activeChoices = options;
 }
 
 function animateBallAlongPath(pathElement, options = {}) {
@@ -227,7 +208,6 @@ function animateBallAlongPath(pathElement, options = {}) {
 
     const pathLength = pathElement.getTotalLength();
     const start = performance.now();
-
     const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
     function frame(now) {
@@ -252,17 +232,21 @@ function animateBallAlongPath(pathElement, options = {}) {
 
 function moveSelectedPathToRevealed(choice) {
   const selected = activeChoices[choice];
-  const unselectedChoice = choice === "A" ? "B" : "A";
-  const unselected = activeChoices[unselectedChoice];
   const stemToKeep = activeStemGroup;
 
   if (stemToKeep) {
     revealedGroup.append(stemToKeep);
   }
 
+  Object.keys(activeChoices)
+    .filter((choiceKey) => choiceKey !== choice)
+    .forEach((choiceKey) => {
+      const otherGroup = activeChoices[choiceKey].group;
+      otherGroup.classList.add("hidden-option");
+      otherGroup.remove();
+    });
+
   selected.group.classList.add("selected-option");
-  unselected.group.classList.add("hidden-option");
-  unselected.group.remove();
   revealedGroup.append(selected.group);
 
   return {
@@ -271,47 +255,45 @@ function moveSelectedPathToRevealed(choice) {
   };
 }
 
+function sequenceHash(sequence) {
+  let hash = 0;
+  for (let i = 0; i < sequence.length; i += 1) {
+    hash = (hash * 37 + sequence.charCodeAt(i) * (i + 1)) % 100000;
+  }
+  return hash;
+}
+
+function buildOutcomeDescription(sequence, space) {
+  const counts = { A: 0, B: 0, C: 0 };
+  sequence.split("").forEach((ch) => {
+    counts[ch] += 1;
+  });
+
+  let traitLine = "You balance instinct, reflection, and experimentation across the house.";
+  if (counts.A > counts.B && counts.A > counts.C) {
+    traitLine = "You favor high-view choices and future-focused moves, shaping clear direction from every fork.";
+  } else if (counts.B > counts.A && counts.B > counts.C) {
+    traitLine = "You choose reflective, centered rooms, turning complexity into calm and coherent judgment.";
+  } else if (counts.C > counts.A && counts.C > counts.B) {
+    traitLine = "You follow adventurous turns and energetic routes, converting uncertainty into momentum.";
+  }
+
+  return `You arrive at your space. ${space.title} feels ${space.vibe}. ${traitLine}`;
+}
+
 function showResult() {
   const sequence = choices.join("");
-  const outcome = outcomes[sequence];
+  const index = sequenceHash(sequence) % finalSpaces.length;
+  const chosenSpace = finalSpaces[index];
 
   resultSequence.textContent = `Sequence: ${sequence}`;
-  resultTitle.textContent = `You arrive at your space: ${outcome.title}`;
-  resultDescription.textContent = outcome.description;
+  resultTitle.textContent = `You arrive at your space: ${chosenSpace.title}`;
+  resultDescription.textContent = buildOutcomeDescription(sequence, chosenSpace);
   resultPanel.hidden = false;
 }
 
-async function handleChoice(choice) {
-  if (interactionLocked || currentStep >= totalDecisionSteps || !activeChoices) {
-    return;
-  }
-
-  interactionLocked = true;
-  setButtonsDisabled(true);
-
-  const selected = activeChoices[choice];
-  await animateBallAlongPath(selected.travelPath);
-  moveSelectedPathToRevealed(choice);
-
-  choices.push(choice);
-  currentPosition = selected.end;
-  currentStep += 1;
-
-  clearActiveChoices();
-
-  if (currentStep < totalDecisionSteps) {
-    buildStepChoices(currentStep);
-    setButtonsDisabled(false);
-  } else {
-    showResult();
-  }
-
-  updateProgress();
-  interactionLocked = false;
-}
-
 async function commitChoice(choice, skipAnimation = false) {
-  if (interactionLocked || currentStep >= totalDecisionSteps || !activeChoices) {
+  if (interactionLocked || currentStep >= totalDecisionSteps || !activeChoices || !activeChoices[choice]) {
     return;
   }
 
@@ -397,26 +379,31 @@ function updateDragPosition(clientX, clientY) {
 
   const pointer = clientToSvgPoint(clientX, clientY);
   const startX = currentPosition.x;
-  const endX = activeChoices.A.end.x;
-  const raw = (pointer.x - startX) / (endX - startX);
-  const progress = clamp(raw, 0, 1);
+  const firstKey = Object.keys(activeChoices)[0];
+  const endX = activeChoices[firstKey].end.x;
+  const progress = clamp((pointer.x - startX) / (endX - startX), 0, 1);
 
-  const pathA = activeChoices.A.travelPath;
-  const pathB = activeChoices.B.travelPath;
+  let nearestChoice = null;
+  let nearestPoint = null;
+  let minDistance = Infinity;
 
-  const pointA = pathA.getPointAtLength(pathA.getTotalLength() * progress);
-  const pointB = pathB.getPointAtLength(pathB.getTotalLength() * progress);
+  Object.keys(activeChoices).forEach((choiceKey) => {
+    const path = activeChoices[choiceKey].travelPath;
+    const point = path.getPointAtLength(path.getTotalLength() * progress);
+    const distance = Math.hypot(pointer.x - point.x, pointer.y - point.y);
 
-  const distA = Math.hypot(pointer.x - pointA.x, pointer.y - pointA.y);
-  const distB = Math.hypot(pointer.x - pointB.x, pointer.y - pointB.y);
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearestChoice = choiceKey;
+      nearestPoint = point;
+    }
+  });
 
-  dragChoice = distA <= distB ? "A" : "B";
+  dragChoice = nearestChoice;
   dragProgress = progress;
-
-  const selectedPoint = dragChoice === "A" ? pointA : pointB;
   setWorldTransitionEnabled(false);
-  setBallPosition(selectedPoint);
-  panToPoint(selectedPoint);
+  setBallPosition(nearestPoint);
+  panToPoint(nearestPoint);
 }
 
 function setupBallDragHandlers() {
@@ -484,6 +471,7 @@ function setupBallDragHandlers() {
 function setupButtonHandlers() {
   buttonA.addEventListener("click", () => commitChoice("A"));
   buttonB.addEventListener("click", () => commitChoice("B"));
+  buttonC.addEventListener("click", () => commitChoice("C"));
 }
 
 function setupSwipeHandlers() {
@@ -519,7 +507,7 @@ function setupSwipeHandlers() {
       if (delta < 0) {
         commitChoice("A");
       } else {
-        commitChoice("B");
+        commitChoice("C");
       }
     },
     { passive: true }
@@ -547,7 +535,7 @@ function setupSwipeHandlers() {
     if (delta < 0) {
       commitChoice("A");
     } else {
-      commitChoice("B");
+      commitChoice("C");
     }
   });
 }
@@ -564,9 +552,14 @@ function setupKeyboardHandlers() {
       commitChoice("A");
     }
 
-    if (key === "arrowright" || key === "b") {
+    if (key === "arrowup" || key === "b") {
       event.preventDefault();
       commitChoice("B");
+    }
+
+    if (key === "arrowright" || key === "c") {
+      event.preventDefault();
+      commitChoice("C");
     }
   });
 }
@@ -590,7 +583,7 @@ function restartQuiz() {
   startDot.setAttribute("cx", "120");
   startDot.setAttribute("cy", "260");
 
-  resultSequence.textContent = "Sequence: ---";
+  resultSequence.textContent = "Sequence: ----";
   resultTitle.textContent = "Outcome";
   resultDescription.textContent = "";
   resultPanel.hidden = true;
@@ -598,6 +591,7 @@ function restartQuiz() {
   buildStepChoices(0);
   setButtonsDisabled(false);
   updateProgress();
+  setWorldTransitionEnabled(true);
   panToPoint(currentPosition);
 }
 

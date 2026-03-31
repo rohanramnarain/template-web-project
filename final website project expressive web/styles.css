@@ -8,7 +8,7 @@
   --track-fill: #f3e8c8;
   --radius: 20px;
   --track-width: 46;
-  --world-width: 3400px;
+  --world-width: 4600px;
 }
 
 * {
@@ -160,7 +160,7 @@ h1 {
 
 .controls {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
   width: 100%;
 }
@@ -236,7 +236,7 @@ h1 {
   }
 
   .controls {
-    max-width: 520px;
+    max-width: 860px;
     width: 100%;
     margin: 0 auto;
   }
