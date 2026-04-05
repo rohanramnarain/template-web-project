@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Expressive Web Branching Quiz</title>
+  <title>Rohan's House of Paths</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <main class="app" aria-label="Interactive house journey">
     <header class="top-bar">
       <p class="progress" id="progress">Step 1 of 4</p>
-      <h1>House of Paths</h1>
+      <h1>Rohan's House of Paths</h1>
       <p class="prompt" id="prompt">You are at the front door.</p>
     </header>
 
@@ -37,6 +38,7 @@
       </div>
 
       <article id="result-panel" class="result-panel" aria-live="polite" hidden>
+        <p class="result-intro">How it works: choose one room at each fork. After four choices, this panel reveals your path sequence and final space.</p>
         <p class="sequence" id="result-sequence">Sequence: ---</p>
         <h2 id="result-title">Outcome</h2>
         <p id="result-description"></p>

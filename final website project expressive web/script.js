@@ -10,6 +10,8 @@ let dragChoice = null;
 let choiceHistory = [];
 let dragStartClientX = null;
 let dragLatestClientX = null;
+let labelPathCounter = 0;
+let restingDragState = null;
 
 const progressText = document.getElementById("progress");
 const promptText = document.getElementById("prompt");
@@ -31,12 +33,19 @@ const resultDescription = document.getElementById("result-description");
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const WORLD_WIDTH = 4600;
+const FORK_INTERACTION = {
+  commitProgress: 0.94,
+  undoProgressMax: 0.18,
+  undoDragPx: 70,
+  verticalBiasPx: 22,
+  verticalStrongBiasPx: 58
+};
 
 const stepConfigs = [
-  { dx: 1050, offsets: { A: -165, B: -20, C: 140 } },
-  { dx: 980, offsets: { A: -145, B: 10, C: 165 } },
-  { dx: 960, offsets: { A: -130, B: 0, C: 155 } },
-  { dx: 930, offsets: { A: -115, B: 18, C: 145 } }
+  { dx: 1050, offsets: { A: -188, B: -20, C: 160 } },
+  { dx: 980, offsets: { A: -170, B: 8, C: 178 } },
+  { dx: 960, offsets: { A: -158, B: 0, C: 168 } },
+  { dx: 930, offsets: { A: -142, B: 16, C: 156 } }
 ];
 
 const totalDecisionSteps = stepConfigs.length;
@@ -103,6 +112,19 @@ function createSvgText(label, x, y) {
   return text;
 }
 
+function createPathLabel(label, pathId, startOffset = "60%") {
+  const text = document.createElementNS(SVG_NS, "text");
+  text.setAttribute("class", "track-label");
+
+  const textPath = document.createElementNS(SVG_NS, "textPath");
+  textPath.setAttribute("href", `#${pathId}`);
+  textPath.setAttribute("startOffset", startOffset);
+  textPath.textContent = label;
+
+  text.append(textPath);
+  return text;
+}
+
 function setBallPosition(point) {
   ball.setAttribute("cx", point.x.toFixed(2));
   ball.setAttribute("cy", point.y.toFixed(2));
@@ -147,7 +169,7 @@ function buildStepChoices(stepIndex) {
   const config = stepConfigs[stepIndex];
   const x0 = currentPosition.x;
   const y0 = currentPosition.y;
-  const splitX = x0 + config.dx * 0.34;
+  const splitX = x0 + config.dx * 0.28;
   const splitY = y0 + (stepIndex % 2 === 0 ? -8 : 8);
   const x1 = x0 + config.dx;
 
@@ -162,9 +184,9 @@ function buildStepChoices(stepIndex) {
   Object.keys(config.offsets).forEach((choiceKey) => {
     const offset = config.offsets[choiceKey];
     const endY = clamp(y0 + offset, 70, 440);
-    const c1x = splitX + config.dx * 0.16;
-    const c2x = splitX + config.dx * 0.52;
-    const c1y = splitY + offset * 0.26;
+    const c1x = splitX + config.dx * 0.11;
+    const c2x = splitX + config.dx * 0.41;
+    const c1y = splitY + offset * 0.44;
     const c2y = splitY + offset * 0.93;
     const branchD = `M ${splitX} ${splitY} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x1} ${endY}`;
     const travelD = `${stemD} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x1} ${endY}`;
@@ -174,10 +196,13 @@ function buildStepChoices(stepIndex) {
 
     const outline = createSvgPath("track-outline", branchD);
     const fill = createSvgPath("track-fill", branchD);
+    const labelPathId = `branch-label-path-${labelPathCounter}`;
+    labelPathCounter += 1;
+    fill.setAttribute("id", labelPathId);
     const travel = createSvgPath("travel-path", travelD);
     const roomLabel = roomChoiceLabels[stepIndex][choiceKey];
-    const labelYBias = choiceKey === "A" ? -18 : choiceKey === "B" ? -4 : 26;
-    const label = createSvgText(roomLabel, x1 - 220, endY + labelYBias);
+    const labelOffset = choiceKey === "A" ? "58%" : choiceKey === "B" ? "60%" : "62%";
+    const label = createPathLabel(roomLabel, labelPathId, labelOffset);
 
     optionGroup.append(outline, fill, label, travel);
     activeGroup.append(optionGroup);
@@ -382,6 +407,18 @@ function updateDragPosition(clientX, clientY) {
   const firstKey = Object.keys(activeChoices)[0];
   const endX = activeChoices[firstKey].end.x;
   const progress = clamp((pointer.x - startX) / (endX - startX), 0, 1);
+  const verticalDelta = pointer.y - currentPosition.y;
+
+  let preferredChoice = null;
+  if (verticalDelta <= -FORK_INTERACTION.verticalStrongBiasPx) {
+    preferredChoice = "A";
+  } else if (verticalDelta >= FORK_INTERACTION.verticalStrongBiasPx) {
+    preferredChoice = "C";
+  } else if (verticalDelta <= -FORK_INTERACTION.verticalBiasPx) {
+    preferredChoice = "A";
+  } else if (verticalDelta >= FORK_INTERACTION.verticalBiasPx) {
+    preferredChoice = "C";
+  }
 
   let nearestChoice = null;
   let nearestPoint = null;
@@ -391,9 +428,20 @@ function updateDragPosition(clientX, clientY) {
     const path = activeChoices[choiceKey].travelPath;
     const point = path.getPointAtLength(path.getTotalLength() * progress);
     const distance = Math.hypot(pointer.x - point.x, pointer.y - point.y);
+    let score = distance;
 
-    if (distance < minDistance) {
-      minDistance = distance;
+    if (preferredChoice) {
+      if (choiceKey === preferredChoice) {
+        score *= 0.52;
+      } else if (choiceKey === "B") {
+        score *= 1.25;
+      } else {
+        score *= 1.15;
+      }
+    }
+
+    if (score < minDistance) {
+      minDistance = score;
       nearestChoice = choiceKey;
       nearestPoint = point;
     }
@@ -401,6 +449,11 @@ function updateDragPosition(clientX, clientY) {
 
   dragChoice = nearestChoice;
   dragProgress = progress;
+  restingDragState = {
+    choice: nearestChoice,
+    progress,
+    point: { x: nearestPoint.x, y: nearestPoint.y }
+  };
   setWorldTransitionEnabled(false);
   setBallPosition(nearestPoint);
   panToPoint(nearestPoint);
@@ -413,8 +466,13 @@ function setupBallDragHandlers() {
     }
 
     isBallDragging = true;
-    dragProgress = 0;
-    dragChoice = null;
+    if (restingDragState) {
+      dragProgress = restingDragState.progress;
+      dragChoice = restingDragState.choice;
+    } else {
+      dragProgress = 0;
+      dragChoice = null;
+    }
     dragStartClientX = event.clientX;
     dragLatestClientX = event.clientX;
     ball.setPointerCapture(event.pointerId);
@@ -436,32 +494,36 @@ function setupBallDragHandlers() {
       return;
     }
 
-    const canCommit = dragChoice && dragProgress > 0.95;
+    const canCommit = dragChoice && dragProgress > FORK_INTERACTION.commitProgress;
     const draggedLeft =
       dragStartClientX !== null &&
       dragLatestClientX !== null &&
-      dragStartClientX - dragLatestClientX > 70;
-    const shouldUndo = !canCommit && dragProgress < 0.2 && draggedLeft && currentStep > 0;
+      dragStartClientX - dragLatestClientX > FORK_INTERACTION.undoDragPx;
+    const shouldUndo = !canCommit && dragProgress < FORK_INTERACTION.undoProgressMax && draggedLeft && currentStep > 0;
 
     isBallDragging = false;
     dragStartClientX = null;
     dragLatestClientX = null;
 
     if (canCommit) {
+      restingDragState = null;
       commitChoice(dragChoice, true);
       return;
     }
 
     if (shouldUndo) {
+      restingDragState = null;
       undoLastChoice();
       return;
     }
 
-    dragProgress = 0;
-    dragChoice = null;
+    if (restingDragState?.point) {
+      dragProgress = restingDragState.progress;
+      dragChoice = restingDragState.choice;
+      setBallPosition(restingDragState.point);
+      panToPoint(restingDragState.point);
+    }
     setWorldTransitionEnabled(true);
-    setBallPosition(currentPosition);
-    panToPoint(currentPosition);
   };
 
   ball.addEventListener("pointerup", finishDrag);
@@ -574,6 +636,7 @@ function restartQuiz() {
   choiceHistory = [];
   dragStartClientX = null;
   dragLatestClientX = null;
+  restingDragState = null;
   currentPosition = { x: 120, y: 260 };
 
   clearActiveChoices();

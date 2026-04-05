@@ -126,8 +126,16 @@ h1 {
 
 .track-label {
   fill: var(--ink);
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
+  letter-spacing: 0.01em;
+  dominant-baseline: middle;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: var(--track-fill);
+  stroke-width: 7px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .travel-path {
@@ -221,6 +229,13 @@ h1 {
   color: var(--soft-ink);
 }
 
+.result-intro {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  color: var(--soft-ink);
+}
+
 #result-description {
   margin: 0;
   line-height: 1.45;
@@ -254,7 +269,7 @@ h1 {
   }
 
   .track-label {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   .controls {
@@ -289,7 +304,7 @@ h1 {
   }
 
   .track-label {
-    font-size: 16px;
+    font-size: 14px;
   }
 }
 
