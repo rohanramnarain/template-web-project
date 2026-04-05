@@ -42,10 +42,10 @@ const FORK_INTERACTION = {
 };
 
 const stepConfigs = [
-  { dx: 1050, offsets: { A: -188, B: -20, C: 160 } },
-  { dx: 980, offsets: { A: -170, B: 8, C: 178 } },
-  { dx: 960, offsets: { A: -158, B: 0, C: 168 } },
-  { dx: 930, offsets: { A: -142, B: 16, C: 156 } }
+  { dx: 1050, offsets: { A: -212, B: 0, C: 212 } },
+  { dx: 980, offsets: { A: -200, B: 0, C: 200 } },
+  { dx: 960, offsets: { A: -188, B: 0, C: 188 } },
+  { dx: 930, offsets: { A: -176, B: 0, C: 176 } }
 ];
 
 const totalDecisionSteps = stepConfigs.length;
@@ -169,8 +169,8 @@ function buildStepChoices(stepIndex) {
   const config = stepConfigs[stepIndex];
   const x0 = currentPosition.x;
   const y0 = currentPosition.y;
-  const splitX = x0 + config.dx * 0.28;
-  const splitY = y0 + (stepIndex % 2 === 0 ? -8 : 8);
+  const splitX = x0 + config.dx * 0.23;
+  const splitY = y0 + (stepIndex % 2 === 0 ? -6 : 6);
   const x1 = x0 + config.dx;
 
   const stemD = `M ${x0} ${y0} C ${x0 + config.dx * 0.12} ${y0}, ${x0 + config.dx * 0.22} ${splitY}, ${splitX} ${splitY}`;
@@ -184,10 +184,11 @@ function buildStepChoices(stepIndex) {
   Object.keys(config.offsets).forEach((choiceKey) => {
     const offset = config.offsets[choiceKey];
     const endY = clamp(y0 + offset, 70, 440);
-    const c1x = splitX + config.dx * 0.11;
-    const c2x = splitX + config.dx * 0.41;
-    const c1y = splitY + offset * 0.44;
-    const c2y = splitY + offset * 0.93;
+    const c1x = splitX + config.dx * 0.08;
+    const c2x = splitX + config.dx * 0.36;
+    const c1yFactor = choiceKey === "B" ? 0.14 : 0.58;
+    const c1y = splitY + offset * c1yFactor;
+    const c2y = splitY + offset * 0.94;
     const branchD = `M ${splitX} ${splitY} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x1} ${endY}`;
     const travelD = `${stemD} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x1} ${endY}`;
 
