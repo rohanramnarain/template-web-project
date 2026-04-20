@@ -34,11 +34,16 @@ const resultDescription = document.getElementById("result-description");
 const SVG_NS = "http://www.w3.org/2000/svg";
 const WORLD_WIDTH = 4600;
 const FORK_INTERACTION = {
-  commitProgress: 0.94,
+  commitProgress: 0.86,
   undoProgressMax: 0.18,
   undoDragPx: 70,
-  verticalBiasPx: 22,
-  verticalStrongBiasPx: 58
+  verticalBiasPx: 16,
+  verticalStrongBiasPx: 44
+};
+
+const DRAG_RESPONSE = {
+  // Lower values make the ball move less distance per mouse movement.
+  progressScale: 0.72
 };
 
 const stepConfigs = [
@@ -219,7 +224,7 @@ function buildStepChoices(stepIndex) {
 }
 
 function animateBallAlongPath(pathElement, options = {}) {
-  const { reverse = false, duration = 920 } = options;
+  const { reverse = false, duration = 760 } = options;
 
   return new Promise((resolve) => {
     if (reducedMotionEnabled()) {
@@ -234,11 +239,11 @@ function animateBallAlongPath(pathElement, options = {}) {
 
     const pathLength = pathElement.getTotalLength();
     const start = performance.now();
-    const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+    const glideEase = (t) => 1 - Math.pow(1 - t, 3);
 
     function frame(now) {
       const raw = Math.min((now - start) / duration, 1);
-      const eased = easeInOut(raw);
+      const eased = glideEase(raw);
       const travelProgress = reverse ? 1 - eased : eased;
       const point = pathElement.getPointAtLength(pathLength * travelProgress);
       setBallPosition(point);
@@ -371,7 +376,7 @@ async function undoLastChoice() {
 
   const last = choiceHistory[choiceHistory.length - 1];
   if (last.travelPath) {
-    await animateBallAlongPath(last.travelPath, { reverse: true, duration: 760 });
+    await animateBallAlongPath(last.travelPath, { reverse: true, duration: 620 });
   }
 
   clearActiveChoices();
@@ -407,7 +412,8 @@ function updateDragPosition(clientX, clientY) {
   const startX = currentPosition.x;
   const firstKey = Object.keys(activeChoices)[0];
   const endX = activeChoices[firstKey].end.x;
-  const progress = clamp((pointer.x - startX) / (endX - startX), 0, 1);
+  const rawProgress = clamp((pointer.x - startX) / (endX - startX), 0, 1);
+  const progress = clamp(rawProgress * DRAG_RESPONSE.progressScale, 0, 1);
   const verticalDelta = pointer.y - currentPosition.y;
 
   let preferredChoice = null;
