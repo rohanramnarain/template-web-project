@@ -12,6 +12,7 @@ let dragStartClientX = null;
 let dragLatestClientX = null;
 let labelPathCounter = 0;
 let restingDragState = null;
+let popAudioContext = null;
 
 const progressText = document.getElementById("progress");
 const promptText = document.getElementById("prompt");
@@ -180,6 +181,50 @@ function createPathLabel(label, pathId, startOffset = "60%") {
 function setBallPosition(point) {
   ball.setAttribute("cx", point.x.toFixed(2));
   ball.setAttribute("cy", point.y.toFixed(2));
+}
+
+function getPopAudioContext() {
+  if (!window.AudioContext && !window.webkitAudioContext) {
+    return null;
+  }
+
+  if (!popAudioContext) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    popAudioContext = new AudioCtx();
+  }
+
+  if (popAudioContext.state === "suspended") {
+    popAudioContext.resume().catch(() => {
+      // Ignore resume failures; this effect is optional.
+    });
+  }
+
+  return popAudioContext;
+}
+
+function playPopSound() {
+  const ctx = getPopAudioContext();
+  if (!ctx) {
+    return;
+  }
+
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.type = "triangle";
+  osc.frequency.setValueAtTime(640, now);
+  osc.frequency.exponentialRampToValueAtTime(220, now + 0.08);
+
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.22, now + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc.start(now);
+  osc.stop(now + 0.12);
 }
 
 function clientToSvgPoint(clientX, clientY) {
@@ -370,9 +415,13 @@ function showResult() {
   resultPanel.hidden = false;
 }
 
-async function commitChoice(choice, skipAnimation = false) {
+async function commitChoice(choice, skipAnimation = false, trigger = "default") {
   if (interactionLocked || currentStep >= totalDecisionSteps || !activeChoices || !activeChoices[choice]) {
     return;
+  }
+
+  if (trigger === "swipe") {
+    playPopSound();
   }
 
   interactionLocked = true;
@@ -561,7 +610,7 @@ function setupBallDragHandlers() {
 
     if (canCommit) {
       restingDragState = null;
-      commitChoice(dragChoice, true);
+      commitChoice(dragChoice, true, "swipe");
       return;
     }
 
@@ -621,9 +670,9 @@ function setupSwipeHandlers() {
       }
 
       if (delta < 0) {
-        commitChoice("A");
+        commitChoice("A", false, "swipe");
       } else {
-        commitChoice("C");
+        commitChoice("C", false, "swipe");
       }
     },
     { passive: true }
@@ -649,9 +698,9 @@ function setupSwipeHandlers() {
     }
 
     if (delta < 0) {
-      commitChoice("A");
+      commitChoice("A", false, "swipe");
     } else {
-      commitChoice("C");
+      commitChoice("C", false, "swipe");
     }
   });
 }
