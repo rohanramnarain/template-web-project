@@ -32,7 +32,6 @@ const resultTitle = document.getElementById("result-title");
 const resultDescription = document.getElementById("result-description");
 
 const SVG_NS = "http://www.w3.org/2000/svg";
-const WORLD_WIDTH = 4600;
 const FORK_INTERACTION = {
   commitProgress: 0.86,
   undoProgressMax: 0.18,
@@ -46,21 +45,69 @@ const DRAG_RESPONSE = {
   progressScale: 0.72
 };
 
-const stepConfigs = [
-  { dx: 1050, offsets: { A: -212, B: 0, C: 212 } },
-  { dx: 980, offsets: { A: -200, B: 0, C: 200 } },
-  { dx: 960, offsets: { A: -188, B: 0, C: 188 } },
-  { dx: 930, offsets: { A: -176, B: 0, C: 176 } }
+const STEP_LENGTHS = [1050, 980, 960, 930, 910, 890, 870, 850, 830, 820];
+const STEP_OFFSET_PATTERNS = [
+  { A: -212, B: 0, C: 212 },
+  { A: -198, B: 0, C: 198 },
+  { A: -184, B: 0, C: 184 },
+  { A: -170, B: 0, C: 170 }
 ];
+
+const stepConfigs = STEP_LENGTHS.map((dx, index) => ({
+  dx,
+  offsets: STEP_OFFSET_PATTERNS[index % STEP_OFFSET_PATTERNS.length]
+}));
+
+const WORLD_WIDTH = stepConfigs.reduce((total, cfg) => total + cfg.dx, currentPosition.x) + 320;
+document.documentElement.style.setProperty("--world-width", `${WORLD_WIDTH}px`);
+svg.setAttribute("viewBox", `0 0 ${WORLD_WIDTH} 520`);
 
 const totalDecisionSteps = stepConfigs.length;
 
-const roomChoiceLabels = [
-  { A: "Sun Hall", B: "Gallery Threshold", C: "Fireplace Nook" },
-  { A: "Studio Landing", B: "Mirror Landing", C: "Library Turn" },
-  { A: "Glass Atrium", B: "Cedar Corridor", C: "Garden Passage" },
-  { A: "Tower Stair", B: "Music Alcove", C: "Courtyard Bridge" }
-];
+const ROOM_LABEL_POOLS = {
+  A: [
+    "Sun Hall",
+    "Studio Landing",
+    "Glass Atrium",
+    "Tower Stair",
+    "Northlight Deck",
+    "Cloud Room",
+    "High Balcony",
+    "Lookout Niche",
+    "Sky Passage",
+    "Beacon Wing"
+  ],
+  B: [
+    "Gallery Threshold",
+    "Mirror Landing",
+    "Cedar Corridor",
+    "Music Alcove",
+    "Archive Crossing",
+    "Signal Hall",
+    "Reading Spine",
+    "Pattern Court",
+    "Center Gallery",
+    "Compass Room"
+  ],
+  C: [
+    "Fireplace Nook",
+    "Library Turn",
+    "Garden Passage",
+    "Courtyard Bridge",
+    "Workshop Bend",
+    "River Walk",
+    "Lantern Lane",
+    "Tinker Path",
+    "Stone Passage",
+    "Harbor Corner"
+  ]
+};
+
+const roomChoiceLabels = stepConfigs.map((_, index) => ({
+  A: ROOM_LABEL_POOLS.A[index % ROOM_LABEL_POOLS.A.length],
+  B: ROOM_LABEL_POOLS.B[index % ROOM_LABEL_POOLS.B.length],
+  C: ROOM_LABEL_POOLS.C[index % ROOM_LABEL_POOLS.C.length]
+}));
 
 const finalSpaces = [
   { title: "Sky Map Room", vibe: "clear-sighted and future focused" },
