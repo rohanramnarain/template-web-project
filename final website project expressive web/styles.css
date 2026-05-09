@@ -168,6 +168,58 @@ h1 {
   touch-action: none;
 }
 
+.ball-pop {
+  animation: ball-pop 260ms cubic-bezier(0.2, 0.95, 0.3, 1);
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+.ball-splash {
+  pointer-events: none;
+}
+
+.ball-splash-ring {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  opacity: 0;
+  transform: scale(0.25);
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: splash-ring 380ms cubic-bezier(0.22, 0.9, 0.2, 1) forwards;
+  animation-delay: var(--splash-delay, 0ms);
+}
+
+@keyframes ball-pop {
+  0% {
+    transform: scale(1);
+  }
+
+  45% {
+    transform: scale(1.24);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes splash-ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.3);
+  }
+
+  70% {
+    opacity: 0.38;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+}
+
 .controls {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

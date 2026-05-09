@@ -183,6 +183,34 @@ function setBallPosition(point) {
   ball.setAttribute("cy", point.y.toFixed(2));
 }
 
+function triggerBallSplash(point) {
+  ball.classList.remove("ball-pop");
+  requestAnimationFrame(() => ball.classList.add("ball-pop"));
+
+  if (reducedMotionEnabled()) {
+    return;
+  }
+
+  const splash = document.createElementNS(SVG_NS, "g");
+  splash.setAttribute("class", "ball-splash");
+  splash.setAttribute("transform", `translate(${point.x} ${point.y})`);
+
+  [12, 18, 24].forEach((radius, index) => {
+    const ring = document.createElementNS(SVG_NS, "circle");
+    ring.setAttribute("class", "ball-splash-ring");
+    ring.setAttribute("cx", "0");
+    ring.setAttribute("cy", "0");
+    ring.setAttribute("r", String(radius));
+    ring.style.setProperty("--splash-delay", `${index * 34}ms`);
+    splash.append(ring);
+  });
+
+  revealedGroup.append(splash);
+  window.setTimeout(() => {
+    splash.remove();
+  }, 600);
+}
+
 function getPopAudioContext() {
   if (!window.AudioContext && !window.webkitAudioContext) {
     return null;
@@ -434,6 +462,8 @@ async function commitChoice(choice, skipAnimation = false, trigger = "default") 
     setBallPosition(selected.end);
     panToPoint(selected.end);
   }
+
+  triggerBallSplash(selected.end);
 
   const startPoint = { ...currentPosition };
   const keptGroups = moveSelectedPathToRevealed(choice);
